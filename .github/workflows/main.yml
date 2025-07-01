@@ -1,0 +1,25 @@
+name: RDP via Cloudflare (No Auth)
+
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Download cloudflared
+        run: |
+          Invoke-WebRequest https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe -OutFile cloudflared-windows-amd64.exe
+
+      - name: Enable RDP and create user
+        run: |
+          net user rdpuser RdpPassword123 /add
+          net localgroup administrators rdpuser /add
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+
+      - name: Start Cloudflare Tunnel without auth
+        run: |
+          Start-Process -NoNewWindow -FilePath ".\cloudflared-windows-amd64.exe" -ArgumentList "tunnel --url tcp://localhost:3389"
+          Start-Sleep -Seconds 10
+          Invoke-WebRequest http://127.0.0.1:4040/api/tunnels | Out-File tunnel.json
+          Get-Content tunnel.json
