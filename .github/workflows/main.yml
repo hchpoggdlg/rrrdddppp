@@ -1,4 +1,4 @@
-name: RDP via Cloudflare (No Auth)
+name: RDP over Cloudflare
 
 on: [workflow_dispatch]
 
@@ -6,17 +6,24 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Download cloudflared
-        run: |
-          Invoke-WebRequest https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe -OutFile cloudflared.exe
 
-      - name: Enable RDP and create user
-        run: |
-          net user rdpuser RdpPassword123 /add
-          net localgroup administrators rdpuser /add
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0
-          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+    - name: إنشاء مستخدم RDP
+      run: |
+        net user rdpuser RdpPassword123! /add
+        net localgroup administrators rdpuser /add
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-      - name: Start Cloudflare Tunnel without auth
-        run: |
-          .\cloudflared.exe tunnel --url tcp://localhost:3389
+    - name: تنزيل cloudflared
+      run: |
+        Invoke-WebRequest https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe -OutFile cloudflared.exe
+
+    - name: تشغيل نفق Cloudflare المؤقت (Quick Tunnel)
+      run: |
+        Start-Process -NoNewWindow -FilePath ".\cloudflared.exe" -ArgumentList "tunnel --url tcp://localhost:3389"
+        Start-Sleep -Seconds 10
+        Get-Process cloudflared
+
+    - name: إبقاء الجلسة مفتوحة لمدة 6 ساعات
+      run: |
+        Start-Sleep -Seconds 21600
