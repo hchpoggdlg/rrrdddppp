@@ -9,7 +9,7 @@ jobs:
 
     - name: إنشاء مستخدم RDP
       run: |
-        net user rdpuser RdpPassword123! /add
+        net user rdpuser RdpPass123 /add /Y
         net localgroup administrators rdpuser /add
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
